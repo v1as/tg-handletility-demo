@@ -67,21 +67,20 @@ public final class UpdateRouter implements Handler<Update> {
         DeleteNoteCallbackHandler deleteNote = new DeleteNoteCallbackHandler(sender, notes);
         UnknownCallbackHandler unknownCallback = new UnknownCallbackHandler();
 
+        List<IdentifiedHandler<CallbackAction, NoteCallback>> noteHandlers =
+                Stream.of(refreshList, openNote, deleteNote)
+                        .map(
+                                handler ->
+                                        Handler.of(handler::onCallback)
+                                                .identifiedBy(handler.getAction()))
+                        .toList();
+
         Handler<NoteCallback> noteCallbacks =
                 HandlerBuilder.from(
-                                SwitchHandler.<CallbackAction, NoteCallback>switchHandler()
-                                        .handler(
-                                                Handler.of(refreshList::handle)
-                                                        .identifiedBy(CallbackAction.LIST))
-                                        .handler(
-                                                Handler.of(openNote::handle)
-                                                        .identifiedBy(CallbackAction.OPEN))
-                                        .handler(
-                                                Handler.of(deleteNote::handle)
-                                                        .identifiedBy(CallbackAction.DELETE))
-                                        .keyReader(Processor.of(NoteCallback::action))
-                                        .defaultHandler(Handler.of(unknownCallback::handle))
-                                        .build())
+                                new SwitchHandler<>(
+                                        noteHandlers,
+                                        Processor.of(NoteCallback::action),
+                                        Handler.of(unknownCallback::handle)))
                         .logging(INFO)
                         .named("CallbackHandler")
                         .build();
