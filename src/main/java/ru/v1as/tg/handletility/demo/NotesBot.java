@@ -6,6 +6,7 @@ import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.operation.handler.Handled;
+import ru.v1as.tg.handletility.demo.note.InMemoryNoteService;
 import ru.v1as.tg.handletility.demo.telegram.OkHttpTgSender;
 import ru.v1as.tg.handletility.demo.telegram.TgSender;
 import ru.v1as.tg.handletility.demo.telegram.UpdateRouter;
@@ -16,7 +17,7 @@ public final class NotesBot implements LongPollingSingleThreadUpdateConsumer {
     private final UpdateRouter updates;
 
     public NotesBot(TgSender sender) {
-        this.updates = new UpdateRouter(sender);
+        this.updates = new UpdateRouter(sender, new InMemoryNoteService());
     }
 
     public static void main(String[] args) throws Exception {

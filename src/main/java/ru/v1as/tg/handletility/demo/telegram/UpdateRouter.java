@@ -15,6 +15,7 @@ import ru.operation.processor.Processor;
 import ru.v1as.tg.handletility.demo.model.Command;
 import ru.v1as.tg.handletility.demo.model.UpdateContext;
 import ru.v1as.tg.handletility.demo.model.UpdateContexts;
+import ru.v1as.tg.handletility.demo.note.NoteService;
 import ru.v1as.tg.handletility.demo.telegram.command.CreateNoteCommandHandler;
 import ru.v1as.tg.handletility.demo.telegram.command.EditNoteCommandHandler;
 import ru.v1as.tg.handletility.demo.telegram.command.ListNotesCommandHandler;
@@ -25,7 +26,7 @@ public final class UpdateRouter implements Handler<Update> {
 
     private final Handler<Update> routes;
 
-    public UpdateRouter(TgSender sender) {
+    public UpdateRouter(TgSender sender, NoteService notes) {
         Handler<Command> commands =
                 HandlerBuilder.from(
                                 SwitchHandler.<String, Command>switchHandler()
@@ -34,17 +35,20 @@ public final class UpdateRouter implements Handler<Update> {
                                                         .identifiedBy("start"))
                                         .handler(
                                                 Handler.of(
-                                                                new ListNotesCommandHandler(sender)
+                                                                new ListNotesCommandHandler(
+                                                                                sender, notes)
                                                                         ::handle)
                                                         .identifiedBy("notes"))
                                         .handler(
                                                 Handler.of(
-                                                                new CreateNoteCommandHandler(sender)
+                                                                new CreateNoteCommandHandler(
+                                                                                sender, notes)
                                                                         ::handle)
                                                         .identifiedBy("note"))
                                         .handler(
                                                 Handler.of(
-                                                                new EditNoteCommandHandler(sender)
+                                                                new EditNoteCommandHandler(
+                                                                                sender, notes)
                                                                         ::handle)
                                                         .identifiedBy("edit"))
                                         .keyReader(
