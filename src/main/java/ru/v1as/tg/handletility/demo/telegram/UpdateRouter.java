@@ -62,17 +62,13 @@ public final class UpdateRouter implements Handler<Update> {
                         .thenHandle(commandsHandler);
 
         AnswerCallbackHandler answer = new AnswerCallbackHandler(sender);
-        RefreshNotesCallbackHandler refreshList = new RefreshNotesCallbackHandler(sender, notes);
-        OpenNoteCallbackHandler openNote = new OpenNoteCallbackHandler(sender, notes);
-        DeleteNoteCallbackHandler deleteNote = new DeleteNoteCallbackHandler(sender, notes);
         UnknownCallbackHandler unknownCallback = new UnknownCallbackHandler();
 
         List<IdentifiedHandler<CallbackAction, NoteCallback>> noteHandlers =
-                Stream.of(refreshList, openNote, deleteNote)
-                        .map(
-                                handler ->
-                                        Handler.of(handler::onCallback)
-                                                .identifiedBy(handler.getAction()))
+                Stream.<IdentifiedHandler<CallbackAction, NoteCallback>>of(
+                                new RefreshNotesCallbackHandler(sender, notes),
+                                new OpenNoteCallbackHandler(sender, notes),
+                                new DeleteNoteCallbackHandler(sender, notes))
                         .toList();
 
         Handler<NoteCallback> noteCallbacks =

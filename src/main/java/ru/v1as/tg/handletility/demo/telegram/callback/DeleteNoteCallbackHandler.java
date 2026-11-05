@@ -1,27 +1,27 @@
 package ru.v1as.tg.handletility.demo.telegram.callback;
 
 import java.util.List;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import ru.v1as.tg.handletility.demo.model.CallbackAction;
 import ru.v1as.tg.handletility.demo.model.NoteCallback;
 import ru.v1as.tg.handletility.demo.note.Note;
 import ru.v1as.tg.handletility.demo.note.NoteService;
 import ru.v1as.tg.handletility.demo.telegram.NoteKeyboards;
-import ru.v1as.tg.handletility.demo.telegram.NotesListFormat;
 import ru.v1as.tg.handletility.demo.telegram.TgSender;
 
-@RequiredArgsConstructor
-public final class DeleteNoteCallbackHandler implements NoteCallbackHandler {
-
-    @Getter private final CallbackAction action = CallbackAction.DELETE;
+public final class DeleteNoteCallbackHandler extends AbstractNoteCallbackHandler {
 
     private final TgSender sender;
     private final NoteService notes;
 
+    public DeleteNoteCallbackHandler(TgSender sender, NoteService notes) {
+        super(CallbackAction.DELETE);
+        this.sender = sender;
+        this.notes = notes;
+    }
+
     @Override
-    public void onCallback(NoteCallback callback) {
+    protected void onCallback(NoteCallback callback) {
         long noteId = callback.noteId();
         boolean deleted = notes.delete(callback.chatId(), noteId);
         String head =
@@ -33,7 +33,7 @@ public final class DeleteNoteCallbackHandler implements NoteCallbackHandler {
                 EditMessageText.builder()
                         .chatId(callback.chatIdStr())
                         .messageId(callback.messageId())
-                        .text(head + "\n\n" + NotesListFormat.format(chatNotes))
+                        .text(head + "\n\n" + notesListText(chatNotes))
                         .replyMarkup(NoteKeyboards.list(chatNotes))
                         .build());
     }
