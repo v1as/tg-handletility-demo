@@ -1,14 +1,12 @@
 package ru.v1as.tg.handletility.demo.telegram.command;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import ru.v1as.tg.handletility.demo.model.Command;
 
+@Slf4j
 public final class UnknownCommandHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(UnknownCommandHandler.class);
-
-    public void handle(Command command) {
+    public void onCommand(Command command) {
         log.warn("Неизвестная команда /{}", command.name());
     }
 }
