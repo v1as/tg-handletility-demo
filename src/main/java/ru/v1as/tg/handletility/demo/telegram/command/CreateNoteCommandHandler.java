@@ -6,6 +6,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import ru.v1as.tg.handletility.demo.model.Command;
 import ru.v1as.tg.handletility.demo.note.Note;
 import ru.v1as.tg.handletility.demo.note.NoteService;
+import ru.v1as.tg.handletility.demo.telegram.NoteKeyboards;
 import ru.v1as.tg.handletility.demo.telegram.TgSender;
 
 @RequiredArgsConstructor
@@ -31,6 +32,7 @@ public final class CreateNoteCommandHandler {
                 SendMessage.builder()
                         .chatId(command.chatIdStr())
                         .text("Создана заметка #%d: %s".formatted(note.id(), note.title()))
+                        .replyMarkup(NoteKeyboards.note(note.id()))
                         .build());
     }
 }

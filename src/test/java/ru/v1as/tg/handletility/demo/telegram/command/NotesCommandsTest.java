@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import ru.v1as.tg.handletility.demo.NotesBot;
 import ru.v1as.tg.handletility.demo.telegram.RecordingTgSender;
 import ru.v1as.tg.handletility.demo.telegram.TelegramUpdates;
@@ -26,6 +28,16 @@ class NotesCommandsTest {
         assertTrue(created.getText().contains("Title"));
         assertTrue(list.getText().contains("#1"));
         assertTrue(list.getText().contains("Title"));
+
+        InlineKeyboardMarkup createdKeyboard = (InlineKeyboardMarkup) created.getReplyMarkup();
+        assertEquals("n|d|1", createdKeyboard.getKeyboard().get(0).get(0).getCallbackData());
+        assertEquals("n|l", createdKeyboard.getKeyboard().get(0).get(1).getCallbackData());
+
+        InlineKeyboardMarkup listKeyboard = (InlineKeyboardMarkup) list.getReplyMarkup();
+        InlineKeyboardButton open = listKeyboard.getKeyboard().get(0).get(0);
+        assertEquals("Title", open.getText());
+        assertEquals("n|o|1", open.getCallbackData());
+        assertEquals("n|l", listKeyboard.getKeyboard().get(1).get(0).getCallbackData());
     }
 
     @Test
