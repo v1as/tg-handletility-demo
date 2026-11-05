@@ -30,12 +30,11 @@ public final class UpdateRouter implements Handler<Update> {
 
     public UpdateRouter(TgSender sender, NoteService notes) {
         List<IdentifiedHandler<String, Command>> commands =
-                Stream.of(
+                Stream.<IdentifiedHandler<String, Command>>of(
                                 new StartCommandHandler(sender),
                                 new ListNotesCommandHandler(sender, notes),
                                 new CreateNoteCommandHandler(sender, notes),
                                 new EditNoteCommandHandler(sender, notes))
-                        .map(cmd -> Handler.of(cmd::onCommand).identifiedBy(cmd.getName()))
                         .toList();
 
         Handler<Command> commandsHandler =

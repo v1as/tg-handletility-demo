@@ -1,15 +1,10 @@
 package ru.v1as.tg.handletility.demo.telegram.command;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import ru.v1as.tg.handletility.demo.model.Command;
 import ru.v1as.tg.handletility.demo.telegram.TgSender;
 
-@RequiredArgsConstructor
-public final class StartCommandHandler implements CommandHandler {
-
-    @Getter private final String name = "start";
+public final class StartCommandHandler extends AbstractCommandHandler {
 
     static final String TEXT =
             """
@@ -22,8 +17,13 @@ public final class StartCommandHandler implements CommandHandler {
 
     private final TgSender sender;
 
+    public StartCommandHandler(TgSender sender) {
+        super("start");
+        this.sender = sender;
+    }
+
     @Override
-    public void onCommand(Command command) {
+    protected void onCommand(Command command) {
         sender.execute(SendMessage.builder().chatId(command.chatIdStr()).text(TEXT).build());
     }
 }
