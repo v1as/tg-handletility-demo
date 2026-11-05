@@ -1,9 +1,15 @@
 package ru.v1as.tg.handletility.demo.telegram;
 
+import static org.slf4j.event.Level.INFO;
+
+import java.util.List;
 import java.util.Objects;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import ru.operation.MdcEntry;
 import ru.operation.handler.Handled;
 import ru.operation.handler.Handler;
+import ru.operation.handler.HandlerBuilder;
+import ru.operation.handler.impl.MdcHandler;
 import ru.operation.handler.impl.switching.SwitchHandler;
 import ru.operation.processor.Processor;
 import ru.v1as.tg.handletility.demo.model.Command;
@@ -20,20 +26,35 @@ public final class UpdateRouter implements Handler<Update> {
     private final Handler<Update> routes;
 
     public UpdateRouter(TgSender sender) {
-        StartCommandHandler start = new StartCommandHandler(sender);
-        ListNotesCommandHandler listNotes = new ListNotesCommandHandler(sender);
-        CreateNoteCommandHandler createNote = new CreateNoteCommandHandler(sender);
-        EditNoteCommandHandler editNote = new EditNoteCommandHandler(sender);
-        UnknownCommandHandler unknownCommand = new UnknownCommandHandler();
-
         Handler<Command> commands =
-                SwitchHandler.<String, Command>switchHandler()
-                        .handler(Handler.of(start::handle).identifiedBy("start"))
-                        .handler(Handler.of(listNotes::handle).identifiedBy("notes"))
-                        .handler(Handler.of(createNote::handle).identifiedBy("note"))
-                        .handler(Handler.of(editNote::handle).identifiedBy("edit"))
-                        .keyReader(Processor.of(Command::name).thenApply(String::toLowerCase))
-                        .defaultHandler(Handler.of(unknownCommand::handle))
+                HandlerBuilder.from(
+                                SwitchHandler.<String, Command>switchHandler()
+                                        .handler(
+                                                Handler.of(new StartCommandHandler(sender)::handle)
+                                                        .identifiedBy("start"))
+                                        .handler(
+                                                Handler.of(
+                                                                new ListNotesCommandHandler(sender)
+                                                                        ::handle)
+                                                        .identifiedBy("notes"))
+                                        .handler(
+                                                Handler.of(
+                                                                new CreateNoteCommandHandler(sender)
+                                                                        ::handle)
+                                                        .identifiedBy("note"))
+                                        .handler(
+                                                Handler.of(
+                                                                new EditNoteCommandHandler(sender)
+                                                                        ::handle)
+                                                        .identifiedBy("edit"))
+                                        .keyReader(
+                                                Processor.of(Command::name)
+                                                        .thenApply(String::toLowerCase))
+                                        .defaultHandler(
+                                                Handler.of(new UnknownCommandHandler()::handle))
+                                        .build())
+                        .logging(INFO)
+                        .named("CommandHandler")
                         .build();
         Handler<UpdateContext> commandUpdates =
                 Processor.when(UpdateContext::isCommand)
@@ -43,7 +64,12 @@ public final class UpdateRouter implements Handler<Update> {
         this.routes =
                 Processor.of(UpdateContexts::parse)
                         .thenFilter(Objects::nonNull)
-                        .thenHandle(commandUpdates);
+                        .thenHandle(
+                                new MdcHandler<>(
+                                        List.of(
+                                                MdcEntry.of("chatId", UpdateContext::chatId),
+                                                MdcEntry.of("userId", UpdateContext::userId)),
+                                        commandUpdates));
     }
 
     @Override

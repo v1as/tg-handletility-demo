@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import ru.operation.handler.Handled;
+import ru.operation.handler.impl.switching.SwitchHandler;
 import ru.v1as.tg.handletility.demo.NotesBot;
 import ru.v1as.tg.handletility.demo.telegram.LogCapture;
 import ru.v1as.tg.handletility.demo.telegram.RecordingTgSender;
@@ -32,6 +33,19 @@ class CommandRoutingTest {
             assertTrue(handled.isDone());
             assertEquals(0, sender.executed().size());
             assertTrue(logs.warningContains("/foo"));
+            assertTrue(logs.warningHasMdc("chatId", "10"));
+            assertTrue(logs.warningHasMdc("userId", "7"));
+        }
+    }
+
+    @Test
+    void logsRoutedCommandAtInfo() {
+        try (LogCapture logs = new LogCapture(SwitchHandler.class, "CommandHandler")) {
+            bot.handle(TelegramUpdates.command(10L, 7L, "/notes"));
+
+            assertTrue(logs.infoContains("notes"));
+            assertTrue(logs.infoHasMdc("chatId", "10"));
+            assertTrue(logs.infoHasMdc("userId", "7"));
         }
     }
 }
