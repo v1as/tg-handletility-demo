@@ -14,10 +14,18 @@ import ru.operation.handler.IdentifiedHandler;
 import ru.operation.handler.impl.MdcHandler;
 import ru.operation.handler.impl.switching.SwitchHandler;
 import ru.operation.processor.Processor;
+import ru.v1as.tg.handletility.demo.model.Callback;
+import ru.v1as.tg.handletility.demo.model.CallbackAction;
 import ru.v1as.tg.handletility.demo.model.Command;
+import ru.v1as.tg.handletility.demo.model.NoteCallback;
 import ru.v1as.tg.handletility.demo.model.UpdateContext;
 import ru.v1as.tg.handletility.demo.model.UpdateContexts;
 import ru.v1as.tg.handletility.demo.note.NoteService;
+import ru.v1as.tg.handletility.demo.telegram.callback.AnswerCallbackHandler;
+import ru.v1as.tg.handletility.demo.telegram.callback.DeleteNoteCallbackHandler;
+import ru.v1as.tg.handletility.demo.telegram.callback.OpenNoteCallbackHandler;
+import ru.v1as.tg.handletility.demo.telegram.callback.RefreshNotesCallbackHandler;
+import ru.v1as.tg.handletility.demo.telegram.callback.UnknownCallbackHandler;
 import ru.v1as.tg.handletility.demo.telegram.command.CreateNoteCommandHandler;
 import ru.v1as.tg.handletility.demo.telegram.command.EditNoteCommandHandler;
 import ru.v1as.tg.handletility.demo.telegram.command.ListNotesCommandHandler;
@@ -52,6 +60,40 @@ public final class UpdateRouter implements Handler<Update> {
                         .thenApply(UpdateContext::message)
                         .thenApply(Command::parse)
                         .thenHandle(commandsHandler);
+
+        AnswerCallbackHandler answer = new AnswerCallbackHandler(sender);
+        RefreshNotesCallbackHandler refreshList = new RefreshNotesCallbackHandler(sender, notes);
+        OpenNoteCallbackHandler openNote = new OpenNoteCallbackHandler(sender, notes);
+        DeleteNoteCallbackHandler deleteNote = new DeleteNoteCallbackHandler(sender, notes);
+        UnknownCallbackHandler unknownCallback = new UnknownCallbackHandler();
+
+        Handler<NoteCallback> noteCallbacks =
+                HandlerBuilder.from(
+                                SwitchHandler.<CallbackAction, NoteCallback>switchHandler()
+                                        .handler(
+                                                Handler.of(refreshList::handle)
+                                                        .identifiedBy(CallbackAction.LIST))
+                                        .handler(
+                                                Handler.of(openNote::handle)
+                                                        .identifiedBy(CallbackAction.OPEN))
+                                        .handler(
+                                                Handler.of(deleteNote::handle)
+                                                        .identifiedBy(CallbackAction.DELETE))
+                                        .keyReader(Processor.of(NoteCallback::action))
+                                        .defaultHandler(Handler.of(unknownCallback::handle))
+                                        .build())
+                        .logging(INFO)
+                        .named("CallbackHandler")
+                        .build();
+        Handler<Callback> answerThenRoute =
+                Handler.of(answer::handle)
+                        .and(Processor.of(NoteCallback::parse).thenHandle(noteCallbacks));
+        Handler<UpdateContext> callbackUpdates =
+                Processor.when(UpdateContext::isCallback)
+                        .thenApply(UpdateContext::callbackQuery)
+                        .thenApply(Callback::from)
+                        .thenHandle(answerThenRoute);
+
         this.routes =
                 Processor.of(UpdateContexts::parse)
                         .thenFilter(Objects::nonNull)
@@ -60,7 +102,7 @@ public final class UpdateRouter implements Handler<Update> {
                                         List.of(
                                                 MdcEntry.of("chatId", UpdateContext::chatId),
                                                 MdcEntry.of("userId", UpdateContext::userId)),
-                                        commandUpdates));
+                                        commandUpdates.or(callbackUpdates)));
     }
 
     @Override
