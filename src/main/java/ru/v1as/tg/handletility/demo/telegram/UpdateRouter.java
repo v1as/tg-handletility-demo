@@ -10,7 +10,10 @@ import ru.v1as.tg.handletility.demo.model.Command;
 import ru.v1as.tg.handletility.demo.model.UpdateContext;
 import ru.v1as.tg.handletility.demo.model.UpdateContexts;
 import ru.v1as.tg.handletility.demo.telegram.command.CreateNoteCommandHandler;
+import ru.v1as.tg.handletility.demo.telegram.command.EditNoteCommandHandler;
+import ru.v1as.tg.handletility.demo.telegram.command.ListNotesCommandHandler;
 import ru.v1as.tg.handletility.demo.telegram.command.StartCommandHandler;
+import ru.v1as.tg.handletility.demo.telegram.command.UnknownCommandHandler;
 
 public final class UpdateRouter implements Handler<Update> {
 
@@ -18,13 +21,19 @@ public final class UpdateRouter implements Handler<Update> {
 
     public UpdateRouter(TgSender sender) {
         StartCommandHandler start = new StartCommandHandler(sender);
+        ListNotesCommandHandler listNotes = new ListNotesCommandHandler(sender);
         CreateNoteCommandHandler createNote = new CreateNoteCommandHandler(sender);
+        EditNoteCommandHandler editNote = new EditNoteCommandHandler(sender);
+        UnknownCommandHandler unknownCommand = new UnknownCommandHandler();
 
         Handler<Command> commands =
                 SwitchHandler.<String, Command>switchHandler()
                         .handler(Handler.of(start::handle).identifiedBy("start"))
+                        .handler(Handler.of(listNotes::handle).identifiedBy("notes"))
                         .handler(Handler.of(createNote::handle).identifiedBy("note"))
+                        .handler(Handler.of(editNote::handle).identifiedBy("edit"))
                         .keyReader(Processor.of(Command::name).thenApply(String::toLowerCase))
+                        .defaultHandler(Handler.of(unknownCommand::handle))
                         .build();
         Handler<UpdateContext> commandUpdates =
                 Processor.when(UpdateContext::isCommand)
