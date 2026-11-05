@@ -19,6 +19,10 @@ public record Command(
         Objects.requireNonNull(arguments, "arguments");
     }
 
+    public String chatIdStr() {
+        return Long.toString(chatId);
+    }
+
     public static Command parse(Message message) {
         String text = message.getText() == null ? "" : message.getText();
         Matcher matcher = PATTERN.matcher(text);
